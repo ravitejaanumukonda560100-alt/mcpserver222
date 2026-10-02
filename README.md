@@ -222,6 +222,20 @@ ecommercewebsite/
 - **RAG**: LangChain, ChromaDB (vector store), FakeEmbeddings (demo)
 - **MCP**: JSON-RPC 2.0 over stdio
 
+## MCP Evaluation Tests
+
+Run the MCP tests locally with:
+
+```bash
+python -m pytest tests/pytest_tests/test_mcp.py -vv -s
+```
+
+The tests use the configured local Ollama model as the DeepEval judge. To submit metric results to
+Confident AI, set `CONFIDENT_AI_API_PORTAL` in the environment before running pytest. The GitHub
+Actions workflow at `.github/workflows/mcp-tests.yml` reads this value from the repository Actions
+secret with the same name. DeepEval submits results when the evaluation tests call `evaluate()`;
+the test setup reports whether Confident AI reporting is enabled.
+
 ## Notes
 
 - The RAG system uses `FakeEmbeddings` for demo purposes (no API key required). For production, replace with `OpenAIEmbeddings` or another provider in `rag.py`.

@@ -118,6 +118,9 @@ def pytest_configure():
     api_key = os.getenv("CONFIDENT_AI_API_PORTAL")
     if api_key:
         deepeval.login(api_key=api_key)
+        print("Confident AI reporting enabled; DeepEval metrics will be submitted.")
+    else:
+        print("Confident AI reporting disabled; set CONFIDENT_AI_API_PORTAL to submit metrics.")
 
 
 @pytest.fixture(scope="session")
