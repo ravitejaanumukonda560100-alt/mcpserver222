@@ -236,6 +236,12 @@ Actions workflow at `.github/workflows/mcp-tests.yml` reads this value from the 
 secret with the same name. DeepEval submits results when the evaluation tests call `evaluate()`;
 the test setup reports whether Confident AI reporting is enabled.
 
+To email the result after each GitHub Actions run, set the repository variable
+`MCP_EMAIL_NOTIFICATIONS` to `true` and configure these Actions secrets: `SMTP_SERVER`, `SMTP_PORT`,
+`SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `MCP_REPORT_EMAIL_TO`. The workflow uploads
+the JUnit report as the `mcp-test-report` artifact and emails the run link and outcome. Email is
+disabled unless the repository variable is enabled.
+
 ## Notes
 
 - The RAG system uses `FakeEmbeddings` for demo purposes (no API key required). For production, replace with `OpenAIEmbeddings` or another provider in `rag.py`.

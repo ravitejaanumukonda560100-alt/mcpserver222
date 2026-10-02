@@ -62,4 +62,36 @@ jobs:
           curl -fsS "$LOCAL_OLLAMA_BASE_URL/api/tags" >/dev/null
 
           ollama pull "$LOCAL_OLLAMA_MODEL"
-          python -m pytest tests/pytest_tests/test_mcp.py -vv -s
+          mkdir -p test-results
+          python -m pytest tests/pytest_tests/test_mcp.py -vv -s --junitxml=test-results/mcp-tests.xml
+
+      - name: Upload pytest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-test-report
+          path: test-results/mcp-tests.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Email MCP test report
+        if: ${{ always() && vars.MCP_EMAIL_NOTIFICATIONS == 'true' }}
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "[MCP tests] ${{ job.status }} - ${{ github.repository }}"
+          to: ${{ secrets.MCP_REPORT_EMAIL_TO }}
+          from: ${{ secrets.SMTP_FROM_EMAIL }}
+          body: |
+            MCP test workflow completed.
+
+            Result: ${{ job.status }}
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Download the mcp-test-report artifact from the workflow run for the JUnit test report.
+            Confident AI metric results are submitted when CONFIDENT_AI_API_PORTAL is configured.
