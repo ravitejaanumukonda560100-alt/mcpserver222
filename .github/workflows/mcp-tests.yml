@@ -1,0 +1,65 @@
+name: MCP tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mcp_server.py"
+      - "backend/**"
+      - "tests/pytest_tests/**"
+      - "requirements.txt"
+      - ".github/workflows/mcp-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mcp_server.py"
+      - "backend/**"
+      - "tests/pytest_tests/**"
+      - "requirements.txt"
+      - ".github/workflows/mcp-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LOCAL_OLLAMA_MODEL: gemma4:e2b
+      LOCAL_OLLAMA_BASE_URL: http://127.0.0.1:11434
+      DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE: "600"
+      DEEPEVAL_TASK_GATHER_BUFFER_SECONDS_OVERRIDE: "30"
+      CONFIDENT_AI_API_PORTAL: ${{ secrets.CONFIDENT_AI_API_PORTAL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama and run MCP tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ollama serve >/tmp/ollama.log 2>&1 &
+
+          for attempt in {1..60}; do
+            if curl -fsS "$LOCAL_OLLAMA_BASE_URL/api/tags" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS "$LOCAL_OLLAMA_BASE_URL/api/tags" >/dev/null
+
+          ollama pull "$LOCAL_OLLAMA_MODEL"
+          python -m pytest tests/pytest_tests/test_mcp.py -vv -s
